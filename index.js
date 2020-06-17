@@ -34,7 +34,7 @@ var user_online = []
 // status 4: in game
 
 function get_index_by_socketId(socketId){
-	for(let i=0;i<user_online.length(); i++){
+	for(let i=0;i<user_online.length; i++){
 		if(user_online[i].socketId == socketId) return i
 	}
 	return -1
@@ -44,13 +44,24 @@ function get_index_by_socketId(socketId){
 io.on('connection', (socket) => {
 	console.log("co nguoi ket noi: " + socket.id)
 
+	socket.on('disconnect', () => {
+		// console.log('disconnect', user_online)
+		var index = get_index_by_socketId(socket.id);
+		// console.log('index: ', index)
+		if (index !== -1)
+			user_online.splice(index, 1);
+		// console.log('disconnect', user_online)
+	})
+
 	socket.on('c2s_online_alert', (data) => {
 		user = {
 			socketId: socket.id,
 			infor: data,
-			staus: 1
+			status: 1
 		}
-		user_online.push(user_online)
+		user_online.push(user)
+		// console.log('connect', user_online)
+		
 	})
 
 	socket.on('c2s_online_list', () => {
@@ -58,19 +69,20 @@ io.on('connection', (socket) => {
 	})
 
 	socket.on('c2s_thach_dau', (data) => {
-		var id = '123456789'                         // get socketid from data
-		
-		var host_index = get_index_by_socketId(id)   // set status user		
-		var guest_index = get_index_by_socketId(socket.id)  // handle request
-
-		if (guest_index = -1) {
+		var id = data                  // get socketid from data
+		var guest_index = get_index_by_socketId(id)   // set status user		
+		var host_index = get_index_by_socketId(socket.id)  // handle request
+		console.log('loi moi tu', user_online[host_index], 'to', user_online[guest_index])
+		if (guest_index == -1) {
+			console.log("khach moi offline")
 			let message = {
 				success: 0,
 				content: "User was offline"
 			}
 			socket.emit('s2c_thach_dau', message)
 		}
-		else if (user_online[index].status != 1) {
+		else if (user_online[guest_index].status != 1) {
+			console.log("deo hieu tai sao: ", user_online[guest_index].status)
 			let message = {
 				success: 0,
 				content: "User not ready"
@@ -81,11 +93,13 @@ io.on('connection', (socket) => {
 			let message = {
 				succcess : 1,
 				host_socketId: user_online[host_index].socketId,
-				guest_socketId: user_online[guest_index].socketId, 
+				guest_socketId: user_online[guest_index].socketId,
+				host_email: user_online[host_index].infor
 			}
 			user_online[host_index].status = 2
 			socket.emit('s2c_thach_dau',message)
-			io.to(user_online[guest_index].socketId).emit('s2c_loi_moi', message)
+			console.log('da chuyen loi moi toi: ', id)
+			io.to(id).emit('s2c_loi_moi', message)
 		}
 	})
 
@@ -95,8 +109,9 @@ io.on('connection', (socket) => {
 	})
 
 	socket.on('c2s_phan_hoi', (data) => {
-		var status = true;                            // get status from data
-		var id = '1243456';														// get socketId host from data
+		var status = data.result;                            // get status from data
+		var id = data.socketId
+																// get socketId host from data
 
 		var guest_index = get_index_by_socketId(socket.id)
 		var host_index = get_index_by_socketId(id)
