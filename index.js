@@ -58,7 +58,7 @@ io.on('connection', (socket) => {
 	})
 
 	socket.on('c2s_thach_dau', (data) => {
-		var id = '123456789'                         // get socketid from data
+		var id = data.socketId                         // get socketid from data
 		
 		var host_index = get_index_by_socketId(id)   // set status user		
 		var guest_index = get_index_by_socketId(socket.id)  // handle request
