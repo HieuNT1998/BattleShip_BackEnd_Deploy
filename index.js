@@ -42,8 +42,9 @@ function get_index_by_socketId(socketId){
 
 
 io.on('connection', (socket) => {
-	console.log("co nguoi ket noi: " + socket.id)
+	// console.log("co nguoi ket noi: " + socket.id)
 	socket.on('disconnect', () => {
+		// console.log(socket.id + " disconnect")
 		var index = get_index_by_socketId(socket.id);
 		if (index !== -1)
 			user_online.splice(index, 1);
@@ -53,7 +54,6 @@ io.on('connection', (socket) => {
 		if (index !== -1)
 		user_online.splice(index, 1);
 	})
-
 	socket.on('c2s_online_alert', (data) => {
 		let index = get_index_by_socketId(socket.id)
 		if(index == -1){
@@ -74,7 +74,6 @@ io.on('connection', (socket) => {
 		var id = data                  // get socketid from data
 		var guest_index = get_index_by_socketId(id)   // set status user		
 		var host_index = get_index_by_socketId(socket.id)  // handle request
-		console.log('loi moi tu', user_online[host_index], 'to', user_online[guest_index])
 		if (guest_index == -1) {
 			let message = {
 				success: 0,
@@ -102,9 +101,9 @@ io.on('connection', (socket) => {
 		}
 	})
 
-	socket.on('c2s_huy_moi',(data)=>{
+	socket.on('c2s_cancel_thach_dau',(data)=>{
 		index = get_index_by_socketId(socket.id)
-		user_online[index].status = 1
+		if(index !== -1) user_online[index].status = 1
 	})
 
 	socket.on('c2s_phan_hoi', (data) => {
@@ -142,6 +141,54 @@ io.on('connection', (socket) => {
 			user_online[host_index].status = 1
 			io.to(user_online[host_index].socketId).emit('s2c_chap_nhan', message)
 		}
+	})
+
+	socket.on('c2s_auto_matching',()=>{
+		console.log(socket.id + " auto matching")
+		var index = get_index_by_socketId(socket.id)
+		if(index !== -1){
+			user_online[index].status = 3;
+		}
+		var waiting_room = []
+		waiting_room = user_online.filter((user)=>{
+			if(user.status === 3 && user.socketId !== socket.id){
+				return user
+			}
+		})
+		if(waiting_room.length === 0){
+			console.log("Chua co ai ")
+			let message = {
+				success : 0,
+				message : "please wait"				
+			}
+			socket.emit('s2c_auto_matching',message)
+		}
+		else{
+			console.log("Tim thay phong")
+			let message = {
+				success : 1,
+				enemySocketId　: waiting_room[0].socketId
+			}
+			socket.emit('s2c_auto_matching',message)
+			message = {
+				success :1, 
+				enemySocketId : socket.id
+			}
+			io.to(waiting_room[0].socketId).emit('s2c_auto_matching',message)
+			user_online[index].status = 4
+			index = get_index_by_socketId(waiting_room[0].socketId)
+			user_online[index].status = 4
+		}
+	})
+
+	socket.on('c2s_cancel_auto_matching',()=>{
+		var index = get_index_by_socketId(socket.id)
+		if(index !== -1) user_online[index].status = 1
+		let message = {
+			success : 1,
+			content : "huy tran thanh cong"
+		}
+		socket.emit('s2c_cancel_auto_matching', message)
 	})
 })
 
