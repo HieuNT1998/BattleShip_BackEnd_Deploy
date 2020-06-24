@@ -25,7 +25,7 @@ app.get('/', (req, res) => {
 
 app.use("/auth", AuthRouter);
 app.use("/users", UserRouter);
-app.use("/games", GameRouter)
+// app.use("/games", GameRouter)
 
 //++++++++++++++++++++++++++++++++++++++++++++ Socket IO Handle +++++++++++++++++++++++++++++++++++++++++++++++++++
 
