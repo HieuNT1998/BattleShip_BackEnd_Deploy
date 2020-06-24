@@ -30,10 +30,10 @@ apiGame.post('/', (req, res) => {
 //     var { user1Id,  }
 // })
 
-apiGame.get('/allwin/:userId',(req,res)=>{
+apiGame.get('/allgame/:userId',(req,res)=>{
     var id = req.params.userId
-    console.log("Id = ",id)
-    pool.query(`select * from game where winner_id = '${id}'`, (err, data) => {
+    // console.log("Id = ",id)
+    pool.query(`select * from game where (user1_id = '${id}' or user2_id = '${id}') and end_time is not null`, (err, data) => {
         if (!err) res.status(201).send({ success: 1, allGame : data.rows })
         else res.status(500).send({ success: 0, message: "fail ???"  })
     })
