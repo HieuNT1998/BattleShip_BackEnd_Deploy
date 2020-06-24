@@ -49,11 +49,13 @@ io.on('connection', (socket) => {
 		if (index !== -1)
 			user_online.splice(index, 1);
 	})
+
 	socket.on('logout',()=>{
 		var index = get_index_by_socketId(socket.id)
 		if (index !== -1)
 		user_online.splice(index, 1);
 	})
+
 	socket.on('c2s_online_alert', (data) => {
 		let index = get_index_by_socketId(socket.id)
 		if(index == -1){
@@ -144,7 +146,7 @@ io.on('connection', (socket) => {
 	})
 
 	socket.on('c2s_auto_matching',()=>{
-		console.log(socket.id + " auto matching")
+		// console.log(socket.id + " auto matching")
 		var index = get_index_by_socketId(socket.id)
 		if(index !== -1){
 			user_online[index].status = 3;
@@ -156,7 +158,7 @@ io.on('connection', (socket) => {
 			}
 		})
 		if(waiting_room.length === 0){
-			console.log("Chua co ai ")
+			// console.log("Chua co ai ")
 			let message = {
 				success : 0,
 				message : "please wait"				
@@ -164,15 +166,19 @@ io.on('connection', (socket) => {
 			socket.emit('s2c_auto_matching',message)
 		}
 		else{
-			console.log("Tim thay phong")
+			// console.log("Tim thay phong")
 			let message = {
 				success : 1,
-				enemySocketId　: waiting_room[0].socketId
+				enemySocketId　: waiting_room[0].socketId,
+				enemyInfor : waiting_room[0].infor,
+				turn : false
 			}
 			socket.emit('s2c_auto_matching',message)
 			message = {
 				success :1, 
-				enemySocketId : socket.id
+				enemySocketId : socket.id,
+				enemyInfor : user_online[index].infor,
+				turn : true
 			}
 			io.to(waiting_room[0].socketId).emit('s2c_auto_matching',message)
 			user_online[index].status = 4
@@ -190,6 +196,52 @@ io.on('connection', (socket) => {
 		}
 		socket.emit('s2c_cancel_auto_matching', message)
 	})
+
+	socket.on('c2s_play_game',(data)=>{
+		// console.log(data.enemySocketId + "play......................" + data.playCommand)
+		var user2SocketId = data.enemySocketId
+		var index = get_index_by_socketId(user2SocketId)
+		var gameCommand = data.playCommand
+		if(index === -1){
+			// user2 was offline
+			console.log("User 2 offline")
+			let message = {
+				success : 0,
+				message : 'User2 was offline'
+			}
+			socket.emit('s2c_play_game',message)
+		}
+		else if(user_online[index].status !== 4){
+			// user2 out room 
+			console.log("User 2 out room")
+			let message = {
+				success : 1,
+				message : 'User2 was outroom'
+			}
+			socket.emit('s2c_play_game',message)
+		}
+		else{
+			// send to user 2
+			let message = {
+				success : 1,
+				message : 'done',
+				gameCommand : gameCommand 
+			}
+			socket.emit('s2c_play_game',message)
+			io.to(user2SocketId).emit('s2c_game_command',gameCommand)
+		}
+	})
+
+	socket.on('c2s_play_with_bot',()=>{
+		let index = get_index_by_socketId(socket.id)
+		if(index !== -1) user_online[index].status = 4
+	})
+
+	socket.on('c2s_end_game',()=>{
+		let index = get_index_by_socketId(socket.id)
+		if(index !== -1) user_online[index].status = 1
+	})
+
 })
 
 http.listen(process.env.PORT || 5000, (err) => {
