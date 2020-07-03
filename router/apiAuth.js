@@ -1,28 +1,22 @@
   const express = require('express');
   const apiAuth = express.Router();
-  var {Pool,Client} = require("pg");
-  
-  var connectionString = "postgres://xomkroolbhzapo:3e72b69723095a2444742e9eb2e51eaaed37c12bdcd1d06e1e36790277b6809a@ec2-34-194-198-176.compute-1.amazonaws.com:5432/d1k28m2g68cauf";
-  var pool = new Pool({
-    connectionString:  connectionString,
-  })
+  var UserModel = require('../models/User');
+  var User = new UserModel
 
   // login ---------------
   apiAuth.post('/login', (req, res) => {
-    console.log("login")
     var {email, password} = req.body;
-    pool.query(`select * from USERS where EMAIL = '${email}' and PASSWORD ='${password}'`,
+    console.log(email)
+    User.getByEmail(email,
         (err,data)=>{
             if(err) res.status(500).send({success:0,err})
             else{
-                console.log("query success")
-                if(data.rows.length > 0 ){
-                    console.log("success");
-                    res.status(201).send({success:1,userName : data.rows[0]})
-                }
-                else{
-                    res.status(500).send({success:0, error:'ten dang nhap hoac mat khau ko dung'})
-                }
+              var user = data.rows[0]
+              if(!user) res.status(500).send({success:0, error:'Email not found'})
+              else{
+                if(password === user.password) res.status(201).send({success:1,userName : data.rows[0]})
+                else res.status(500).send({success:0, error:'Password incorrect'})
+              }
             }
         }
     )
