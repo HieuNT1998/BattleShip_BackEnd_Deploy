@@ -1,6 +1,5 @@
 const express = require('express');
 const apiGame = express.Router();
-var { Pool, Client } = require("pg");
 const GameModel = require('../models/Game');
 const Game = new GameModel
 

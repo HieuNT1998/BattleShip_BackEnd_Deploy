@@ -4,9 +4,11 @@ const bodyParse = require('body-parser')
 const AuthRouter = require('./router/apiAuth');
 const UserRouter = require('./router/apiUser');
 const GameRouter = require('./router/apiGame');
+const AuthMiddleWare = require('./middleware/AuthMiddleware')
 const { use } = require('./router/apiAuth');
 const http = require('http').Server(app)
 const io = require('socket.io')(http)
+
 
 app.use(bodyParse.urlencoded({ extended: false }));
 app.use(bodyParse.json());
@@ -24,8 +26,9 @@ app.get('/', (req, res) => {
 })
 
 app.use("/auth", AuthRouter);
+app.use(AuthMiddleWare.isAuth);
 app.use("/users", UserRouter);
-app.use("/games", GameRouter)
+app.use("/games", GameRouter);
 
 //++++++++++++++++++++++++++++++++++++++++++++ Socket IO Handle +++++++++++++++++++++++++++++++++++++++++++++++++++
 
